@@ -1,0 +1,12 @@
+import { useState, type FormEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { register } from "../../api/client";
+
+export default function Register() {
+  const navigate = useNavigate();
+  const [form, setForm] = useState({ username:"", password:"", first_name:"", last_name:"", email:"", role:"CUSTOMER", phone:"", business_name:"" });
+  const [error,setError]=useState(""); const [busy,setBusy]=useState(false);
+  const update=(key:string,value:string)=>setForm(f=>({...f,[key]:value}));
+  const submit=async(e:FormEvent)=>{e.preventDefault();setBusy(true);setError("");try{await register({...form,role:form.role});navigate("/login");}catch(err){setError(err instanceof Error?err.message:"Unable to register");}finally{setBusy(false);}};
+  return <div className="auth-shell"><div className="auth-card wide"><div className="brand brand-dark"><div className="brand-mark">F</div><div><strong>FieldFlow</strong><span>Service Operations</span></div></div><h1>Create your workspace</h1><p className="muted">Choose your role and start managing service operations.</p><form onSubmit={submit} className="form-grid"><label>First name<input value={form.first_name} onChange={e=>update("first_name",e.target.value)} required/></label><label>Last name<input value={form.last_name} onChange={e=>update("last_name",e.target.value)}/></label><label>Username<input value={form.username} onChange={e=>update("username",e.target.value)} required/></label><label>Email<input type="email" value={form.email} onChange={e=>update("email",e.target.value)}/></label><label>Password<input type="password" value={form.password} onChange={e=>update("password",e.target.value)} minLength={8} required/></label><label>Phone<input value={form.phone} onChange={e=>update("phone",e.target.value)}/></label><label>Role<select value={form.role} onChange={e=>update("role",e.target.value)}><option value="CUSTOMER">Customer</option><option value="WORKER">Worker</option><option value="OWNER">Business Owner</option></select></label>{form.role==="OWNER" && <label>Business name<input value={form.business_name} onChange={e=>update("business_name",e.target.value)} required/></label>}{error && <div className="error-box full">{error}</div>}<button className="primary full" disabled={busy}>{busy ? "Creating…" : "Create account"}</button></form><p className="auth-footer">Already registered? <Link to="/login">Sign in</Link></p></div></div>;
+}
