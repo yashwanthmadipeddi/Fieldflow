@@ -21,6 +21,11 @@ async function parseResponse(response: Response): Promise<unknown> {
   }
 }
 
+function clearTokens() {
+  localStorage.removeItem(ACCESS_KEY);
+  localStorage.removeItem(REFRESH_KEY);
+}
+
 async function refreshAccessToken(): Promise<string> {
   const refresh = localStorage.getItem(REFRESH_KEY);
 
@@ -39,12 +44,16 @@ async function refreshAccessToken(): Promise<string> {
       .then(async (response) => {
         const data = await parseResponse(response);
 
-        if (!response.ok || !data || typeof data !== "object" || !("access" in data)) {
+        if (
+          !response.ok ||
+          !data ||
+          typeof data !== "object" ||
+          !("access" in data)
+        ) {
           throw new Error("Session expired");
         }
 
         const access = String((data as { access: unknown }).access);
-
         localStorage.setItem(ACCESS_KEY, access);
 
         if ("refresh" in data && (data as { refresh?: unknown }).refresh) {
@@ -69,7 +78,12 @@ export async function apiFetch<T>(
   options: RequestInit = {},
   retry = true
 ): Promise<T> {
-  const token = localStorage.getItem(ACCESS_KEY);
+  const isLoginOrRegister =
+    path === "/auth/login/" || path === "/auth/register/";
+
+  const token = isLoginOrRegister
+    ? null
+    : localStorage.getItem(ACCESS_KEY);
 
   const headers = new Headers(options.headers);
 
@@ -82,12 +96,19 @@ export async function apiFetch<T>(
 
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
+  } else {
+    headers.delete("Authorization");
   }
 
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers,
   });
+
+  if (response.status === 401 && path === "/auth/me/") {
+    clearTokens();
+    throw new Error("Session expired. Please sign in again.");
+  }
 
   if (response.status === 401 && retry && !path.includes("/auth/")) {
     try {
@@ -116,9 +137,7 @@ export async function apiFetch<T>(
           typeof retryData === "object" &&
           retryData &&
           "detail" in retryData
-            ? String(
-                (retryData as { detail: unknown }).detail
-              )
+            ? String((retryData as { detail: unknown }).detail)
             : "Request failed";
 
         throw new Error(message);
@@ -126,10 +145,12 @@ export async function apiFetch<T>(
 
       return retryData as T;
     } catch {
-      localStorage.removeItem(ACCESS_KEY);
-      localStorage.removeItem(REFRESH_KEY);
+      clearTokens();
 
-      if (window.location.pathname !== "/login") {
+      if (
+        window.location.pathname !== "/login" &&
+        window.location.pathname !== "/register"
+      ) {
         window.location.href = "/login";
       }
 
@@ -154,6 +175,8 @@ export async function apiFetch<T>(
 }
 
 export async function login(username: string, password: string) {
+  clearTokens();
+
   const result = await apiFetch<{
     access: string;
     refresh: string;
@@ -170,6 +193,8 @@ export async function login(username: string, password: string) {
 }
 
 export async function register(payload: Record<string, unknown>) {
+  clearTokens();
+
   return apiFetch<User>("/auth/register/", {
     method: "POST",
     body: JSON.stringify(payload),
@@ -181,7 +206,5 @@ export async function me() {
 }
 
 export function logout() {
-  localStorage.removeItem(ACCESS_KEY);
-  localStorage.removeItem(REFRESH_KEY);
+  clearTokens();
 }
-
