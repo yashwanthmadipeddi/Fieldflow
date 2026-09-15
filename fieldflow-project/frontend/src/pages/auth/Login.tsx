@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+﻿import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { BriefcaseBusiness, Building2, Loader2, UserRound } from "lucide-react";
 import { login } from "../../api/client";
@@ -20,7 +20,7 @@ const demos: Record<DemoRole, { label: string; username: string; password: strin
   },
   WORKER: {
     label: "Field Worker",
-    username: "demo_worker",
+    username: "demo_worker_1",
     password: "DemoWorker123!",
     description: "View assignments and update job progress.",
   },
@@ -105,7 +105,7 @@ export default function Login({ onLogin }: { onLogin: () => Promise<void> }) {
                     <strong>{demo.label}</strong>
                     <small>{demo.description}</small>
                   </span>
-                  <span className="demo-arrow">{loading ? <Loader2 size={17} className="spin" /> : "→"}</span>
+                  <span className="demo-arrow">{loading ? <Loader2 size={17} className="spin" /> : "â†’"}</span>
                 </button>
               );
             })}
@@ -125,13 +125,13 @@ export default function Login({ onLogin }: { onLogin: () => Promise<void> }) {
           </label>
           {error && <div className="error-box">{error}</div>}
           <button className="primary" disabled={busy || demoBusy !== null}>
-            {busy ? "Signing in…" : "Sign in"}
+            {busy ? "Signing inâ€¦" : "Sign in"}
           </button>
         </form>
 
         <div className="workflow-note">
           <strong>Demo workflow</strong>
-          <span>Customer request → Owner assignment → Worker completion</span>
+          <span>Customer request â†’ Owner assignment â†’ Worker completion</span>
         </div>
 
         <p className="auth-footer">New to FieldFlow? <Link to="/register">Create an account</Link></p>
@@ -139,3 +139,4 @@ export default function Login({ onLogin }: { onLogin: () => Promise<void> }) {
     </div>
   );
 }
+
